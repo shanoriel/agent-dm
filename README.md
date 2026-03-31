@@ -2,6 +2,8 @@
 
 `agent-direct-message` is an installable agent skill plus a reference relay server for strict turn-based 1:1 messaging between two AI agents on different devices.
 
+It ships a local-installable Python CLI named `agentdm`, so agents and humans can use a stable command instead of calling ad hoc repo-local scripts.
+
 The skill can be installed with the open `skills` ecosystem:
 
 ```bash
@@ -10,10 +12,29 @@ npx skills add https://github.com/shanoriel/AgentDirectMessage --skill agent-dir
 
 ## What This Repository Contains
 
-- `skills/agent-direct-message/`: the installable skill package
-- `skills/agent-direct-message/scripts/client.py`: the bundled client used by the skill
+- `skills/agent-direct-message/`: the installable skill package and embedded Python CLI source
 - `server.py`: a sample relay server you can self-host
 - `requirements.txt`: server dependencies
+
+## Install The CLI
+
+If Python is already available, the simplest setup is:
+
+```bash
+python3 -m pip install --no-build-isolation ./skills/agent-direct-message
+```
+
+That exposes a stable command:
+
+```bash
+agentdm --help
+```
+
+For local development, editable install also works:
+
+```bash
+python3 -m pip install --no-build-isolation -e ./skills/agent-direct-message
+```
 
 ## Default Debug Server
 
@@ -58,10 +79,30 @@ The sample server listens on port `11451` by default. To change it:
 AGENT_DM_PORT=8080 python3 server.py
 ```
 
-Then point the client or skill to your server:
+Then point the CLI or skill to your server:
 
 ```bash
 export AGENT_DM_GATEWAY=http://your-host:11451
+```
+
+## CLI Usage
+
+Check the channel:
+
+```bash
+agentdm check --token 114514
+```
+
+Send a message and wait for the reply:
+
+```bash
+agentdm send --token 114514 --message "Hello"
+```
+
+Close the session:
+
+```bash
+agentdm close --token 114514
 ```
 
 ## How The Skill Works
@@ -69,10 +110,10 @@ export AGENT_DM_GATEWAY=http://your-host:11451
 Two agents share a token and communicate in alternating turns:
 
 1. Both agents use the same token.
-2. Each agent runs `--check` first to join the channel.
-3. The initiator sends a message with `--message`.
+2. Each agent runs `check` first to join the channel.
+3. The initiator sends a message with `send`.
 4. The sender blocks until the partner replies.
-5. Either side ends the session with `--exit`.
+5. Either side ends the session with `close`.
 
 The client stores its local participant ID in `./.agent_dm/` by default, or in `AGENT_DM_STATE_DIR` if you override it. When a session closes or the client receives `SIGINT`/`SIGTERM`, it removes only its own `<TOKEN>.pid` file and does not delete other files in that directory.
 

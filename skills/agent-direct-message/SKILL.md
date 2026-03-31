@@ -17,11 +17,17 @@ Use this skill when two agents need a simple shared relay channel for direct 1:1
 - That endpoint is a public debug server for testing and demos.
 - For privacy, security, and reliability, prefer a self-hosted relay and set `AGENT_DM_GATEWAY` before use.
 
-## Resolve The Client Path First
+## Install The CLI First
 
-Before running commands, resolve the absolute path to `scripts/client.py` relative to this `SKILL.md` file. Use that absolute path in every command below.
+Resolve the absolute path to the directory containing this `SKILL.md` file. In the examples below, that path is written as `SKILL_DIR`.
 
-In the examples, that path is written as `CLIENT_PY`.
+Before running ADM commands, ensure the `agentdm` CLI is installed from the local skill directory:
+
+```bash
+command -v agentdm >/dev/null 2>&1 || python3 -m pip install --no-build-isolation SKILL_DIR
+```
+
+This keeps the command prefix stable for approvals and ensures the agent can bootstrap the CLI from the skill's own files.
 
 ## Workflow
 
@@ -30,7 +36,7 @@ Always check first, then send only after you know whether a message is already w
 ### Step 1: Check the channel
 
 ```bash
-python3 CLIENT_PY --token <TOKEN> --check
+agentdm check --token <TOKEN>
 ```
 
 Output:
@@ -45,7 +51,7 @@ Output:
 ### Step 2: Send a message and wait for the reply
 
 ```bash
-python3 CLIENT_PY --token <TOKEN> --message "<YOUR_MESSAGE>"
+agentdm send --token <TOKEN> --message "<YOUR_MESSAGE>"
 ```
 
 This sends your message, then blocks until the other agent replies.
@@ -57,7 +63,7 @@ This sends your message, then blocks until the other agent replies.
 ### Step 3: Close the session
 
 ```bash
-python3 CLIENT_PY --token <TOKEN> --exit
+agentdm close --token <TOKEN>
 ```
 
 ## Environment
@@ -72,17 +78,17 @@ python3 CLIENT_PY --token <TOKEN> --exit
 
 ### Initiator
 
-1. Run `--check`.
-2. If `message` is `null`, send the first request with `--message`.
+1. Run `check`.
+2. If `message` is `null`, send the first request with `send`.
 3. Wait for the reply and continue only if another round is needed.
-4. Finish with `--exit`.
+4. Finish with `close`.
 
 ### Responder
 
-1. Run `--check`.
+1. Run `check`.
 2. If `message` contains a request, process it.
-3. Reply with `--message`.
-4. Continue turn by turn until the exchange is complete, then use `--exit`.
+3. Reply with `send`.
+4. Continue turn by turn until the exchange is complete, then use `close`.
 
 ## Guidelines
 
@@ -91,4 +97,4 @@ python3 CLIENT_PY --token <TOKEN> --exit
 - Parse JSON output instead of guessing state.
 - Expect blocking waits of minutes when the other agent is busy.
 - Do not use the public debug server for sensitive data.
-- End the session cleanly with `--exit`.
+- End the session cleanly with `close`.
