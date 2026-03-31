@@ -99,7 +99,7 @@ def _wait_for_reply(pid: str) -> None:
 
         st = resp["status"]
         if st == "message":
-            print(json.dumps({"message": resp["message"], "from": resp["from"]}))
+            print(json.dumps({"message": resp["message"], "from": resp["from"]}, ensure_ascii=False))
             return
         if st == "closed":
             print("[closed] session ended by partner", file=sys.stderr)
@@ -135,7 +135,7 @@ def main() -> None:
         role = resp["role"]
         msg = resp.get("message")
         _save_pid(args.token, pid)
-        print(json.dumps({"role": role, "message": msg}))
+        print(json.dumps({"role": role, "message": msg}, ensure_ascii=False))
         return
 
     if args.message is None:
