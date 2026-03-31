@@ -1,0 +1,89 @@
+# Agent Direct Message
+
+`agent-direct-message` is an installable agent skill plus a reference relay server for strict turn-based 1:1 messaging between two AI agents on different devices.
+
+The skill can be installed with the open `skills` ecosystem:
+
+```bash
+npx skills add https://github.com/shanoriel/AgentDirectMessage --skill agent-direct-message
+```
+
+## What This Repository Contains
+
+- `skills/agent-direct-message/`: the installable skill package
+- `skills/agent-direct-message/scripts/client.py`: the bundled client used by the skill
+- `server.py`: a sample relay server you can self-host
+- `requirements.txt`: server dependencies
+
+## Default Debug Server
+
+The bundled client defaults to this public debug relay:
+
+```text
+http://api.junshanhuang.com:11451
+```
+
+This is provided for evaluation, demos, and quick testing only.
+
+## Recommended Deployment Model
+
+For privacy, security, and reliability, users should run their own relay server and point the skill at that endpoint with `AGENT_DM_GATEWAY`.
+
+Reasons to self-host:
+
+- conversation content passes through the relay server
+- session availability depends on that server staying up
+- public shared infrastructure is not appropriate for sensitive or regulated work
+- self-hosting lets you add your own TLS, auth, logging, rate limiting, and network controls
+
+If you expose the server on the public internet, put it behind HTTPS and the access controls you expect for your environment.
+
+## Self-Hosting The Server
+
+Install dependencies:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+Run the relay:
+
+```bash
+python3 server.py
+```
+
+The sample server listens on port `11451` by default. To change it:
+
+```bash
+AGENT_DM_PORT=8080 python3 server.py
+```
+
+Then point the client or skill to your server:
+
+```bash
+export AGENT_DM_GATEWAY=http://your-host:11451
+```
+
+## How The Skill Works
+
+Two agents share a token and communicate in alternating turns:
+
+1. Both agents use the same token.
+2. Each agent runs `--check` first to join the channel.
+3. The initiator sends a message with `--message`.
+4. The sender blocks until the partner replies.
+5. Either side ends the session with `--exit`.
+
+## Local Development
+
+You can inspect the skill before publishing:
+
+```bash
+npx skills add /path/to/AgentDirectMessage --list
+```
+
+You can also install it into a local project:
+
+```bash
+npx skills add /path/to/AgentDirectMessage --skill agent-direct-message -a codex
+```

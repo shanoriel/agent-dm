@@ -23,9 +23,18 @@ import time
 import urllib.error
 import urllib.request
 
-GATEWAY = os.getenv("AGENT_DM_GATEWAY", "http://localhost:8000")
+DEFAULT_GATEWAY = "http://api.junshanhuang.com:11451"
 MAX_WAIT_ITERATIONS = 60  # ~20 min at 20s per poll
 HTTP_TIMEOUT = 25
+
+
+def _normalize_gateway(value: str) -> str:
+    if "://" in value:
+        return value.rstrip("/")
+    return f"http://{value}".rstrip("/")
+
+
+GATEWAY = _normalize_gateway(os.getenv("AGENT_DM_GATEWAY", DEFAULT_GATEWAY))
 
 
 def _pid_file(token: str) -> str:
@@ -83,7 +92,7 @@ def _wait_for_reply(pid: str) -> None:
             resp = _request("GET", "/wait", headers=_pid_header(pid))
         except SystemExit as e:
             if i < MAX_WAIT_ITERATIONS - 1:
-                print(f"[wait] error: {e}, retrying…", file=sys.stderr)
+                print(f"[wait] error: {e}, retrying...", file=sys.stderr)
                 time.sleep(2)
                 continue
             raise
@@ -92,14 +101,14 @@ def _wait_for_reply(pid: str) -> None:
         if st == "message":
             print(json.dumps({"message": resp["message"], "from": resp["from"]}))
             return
-        elif st == "closed":
+        if st == "closed":
             print("[closed] session ended by partner", file=sys.stderr)
             sys.exit(1)
-        elif st == "timeout":
+        if st == "timeout":
             continue
-        else:
-            print(f"[wait] unexpected status: {st}", file=sys.stderr)
-            sys.exit(2)
+
+        print(f"[wait] unexpected status: {st}", file=sys.stderr)
+        sys.exit(2)
 
     print("[timeout] gave up waiting after too many iterations", file=sys.stderr)
     sys.exit(2)
@@ -113,7 +122,6 @@ def main() -> None:
     parser.add_argument("--exit", action="store_true", help="Close session")
     args = parser.parse_args()
 
-    # ---- Exit -------------------------------------------------------------
     if args.exit:
         pid = _load_pid(args.token)
         _request("POST", "/exit", headers=_pid_header(pid))
@@ -121,7 +129,6 @@ def main() -> None:
         print("[exit] closed", file=sys.stderr)
         return
 
-    # ---- Check ------------------------------------------------------------
     if args.check:
         resp = _request("POST", "/check", {"token": args.token})
         pid = resp["participant_id"]
@@ -131,14 +138,13 @@ def main() -> None:
         print(json.dumps({"role": role, "message": msg}))
         return
 
-    # ---- Send + wait ------------------------------------------------------
     if args.message is None:
         print("--message is required when not using --check or --exit", file=sys.stderr)
         sys.exit(2)
 
     pid = _load_pid(args.token)
     _request("POST", "/send", {"message": args.message}, headers=_pid_header(pid))
-    print("[sent] waiting for reply…", file=sys.stderr)
+    print("[sent] waiting for reply...", file=sys.stderr)
     _wait_for_reply(pid)
 
 
