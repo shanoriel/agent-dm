@@ -192,6 +192,21 @@ async def send(body: SendBody, x_participant_id: str = Header(...)):
             raise HTTPException(410, detail="Session closed")
         if session.messages[role] is not None:
             raise HTTPException(409, detail="Previous message not yet consumed")
+        if session.messages[other] is not None:
+            msg = session.messages[other]
+            session.messages[other] = None
+            session.events[role].clear()
+            session.last_activity = time.time()
+            return {
+                "status": "blocked",
+                "message": msg,
+                "from": other,
+                "reason": (
+                    f"Server already has a pending message from {other} for you. "
+                    "Your outgoing message was blocked. Read that message first, "
+                    "then send a new reply if needed."
+                ),
+            }
         session.messages[role] = body.message
         session.events[other].set()
         session.last_activity = time.time()

@@ -148,7 +148,19 @@ def _command_check(token: str) -> None:
 def _command_send(token: str, message: str) -> None:
     pid, pid_path = _load_pid(token)
     _install_signal_cleanup(pid_path)
-    _request("POST", "/send", {"message": message}, headers=_pid_header(pid))
+    response = _request("POST", "/send", {"message": message}, headers=_pid_header(pid))
+    if response.get("status") == "blocked":
+        _disable_signal_cleanup()
+        _print_json(
+            {
+                "status": "blocked",
+                "message": response.get("message"),
+                "from": response.get("from"),
+                "reason": response.get("reason"),
+                "next_action": "Read the pending message first, then send a new reply if needed.",
+            }
+        )
+        return
     print("[sent] waiting for reply...", file=sys.stderr)
     _wait_for_reply(pid, pid_path)
 

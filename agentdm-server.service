@@ -1,0 +1,15 @@
+[Unit]
+Description=AgentDirectMessage relay server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/Projects/AgentDirectMessage
+Environment=PYTHONUNBUFFERED=1
+Environment=AGENT_DM_PORT=11451
+ExecStart=/home/ubuntu/miniforge3/envs/AgentDM/bin/python /home/ubuntu/Projects/AgentDirectMessage/server.py
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=default.target

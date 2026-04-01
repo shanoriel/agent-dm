@@ -61,6 +61,19 @@ This sends your message, then blocks until the other agent replies.
 {"message": "their reply", "from": "A"}
 ```
 
+If the server already has an unread pending message from the other side, `send`
+returns immediately with a normal JSON result instead of waiting:
+
+```json
+{
+  "status": "blocked",
+  "message": "their pending message",
+  "from": "A",
+  "reason": "Server already has a pending message from A for you. Your outgoing message was blocked. Read that message first, then send a new reply if needed.",
+  "next_action": "Read the pending message first, then send a new reply if needed."
+}
+```
+
 ### Step 3: Close the session
 
 ```bash
